@@ -1,0 +1,27 @@
+{{define "body"}}
+<h1>Заявки на предзаказ</h1>
+<table>
+  <thead><tr><th>ID</th><th>Товар</th><th>Имя</th><th>Контакт</th><th>Статус</th><th>Дата</th></tr></thead>
+  <tbody>
+  {{range .Preorders}}
+    <tr>
+      <td class="mono">{{.ID}}</td>
+      <td>{{.ProductTitle}}</td>
+      <td>{{.ContactName}}</td>
+      <td>{{.Contact}}</td>
+      <td>
+        {{ $s := .Status }}
+        <form method="post" action="/admin/preorders/{{.ID}}/status" style="display:flex;gap:.3rem">
+          <input type="hidden" name="csrf" value="{{$.CSRF}}">
+          <select name="status" onchange="this.form.submit()">
+            {{range $.PreorderStatuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+          </select>
+        </form>
+      </td>
+      <td class="sub mono">{{.CreatedAt}}</td>
+    </tr>
+  {{end}}
+  {{if not .Preorders}}<tr><td colspan="7" class="sub">Заявок пока нет.</td></tr>{{end}}
+  </tbody>
+</table>
+{{end}}

@@ -1,0 +1,73 @@
+name: ci
+# WIP: проверится первым же запуском в репозитории.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+      - name: vet + test + build
+        working-directory: api
+        run: |
+          go vet ./...
+          go test ./... -count=1
+          go build ./...
+      - name: govulncheck
+        working-directory: api
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      # G202 исключён осознанно: ph()/phList() подставляют плейсхолдеры (?/$N), не данные —
+      # см. SECURITY.md
+      - name: gosec
+        working-directory: api
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -exclude=G202 ./...
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - name: lint + build
+        working-directory: web
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm lint
+          pnpm build
+      # audit шумный на транзитивных зависимостях — репортим, сборку не роняем
+      - name: pnpm audit
+        working-directory: web
+        run: pnpm audit --prod
+        continue-on-error: true
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

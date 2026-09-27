@@ -1,0 +1,51 @@
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+.pnpm-debug.log*
+
+# ---- Go ----
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+*.test
+*.out
+vendor/
+wolf-api
+coverage.out
+
+# ---- env / secrets ----
+.env
+.env.*
+*.env
+!*.env.example
+*.pem
+*.key
+
+# ---- local DB / runtime ----
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+uploads/
+data/
+*.log
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---- build artifacts (deploy staging) ----
+web/pkg/

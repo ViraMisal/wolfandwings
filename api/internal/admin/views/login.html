@@ -1,0 +1,11 @@
+{{define "body"}}
+<h1>Вход в админку</h1>
+{{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+<form method="post" action="/admin/login" class="card" style="max-width:380px">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <label>Email</label><input name="email" type="email" required value="{{.Email}}">
+  <label>Пароль</label><input name="password" type="password" required>
+  <p class="sub" style="font-size:.8rem;margin:.6rem 0">Доступ только через SSH-туннель.</p>
+  <button class="btn" type="submit">Войти</button>
+</form>
+{{end}}

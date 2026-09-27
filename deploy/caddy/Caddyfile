@@ -1,0 +1,45 @@
+# Caddyfile — Волчица и Крылья (прод, Debian 13)
+# СТАТУС: WIP — перед продом требует проверки на реальном сервере.
+# Авто-HTTPS (Let's Encrypt), 301 редирект алиасов → wolfandwings.ru,
+# reverse proxy к Next (3000).
+# Админка НЕ торчит наружу: доступ только через SSH-туннель к 127.0.0.1:8080:
+#   ssh -L 8080:127.0.0.1:8080 deploy@SERVER  →  http://panel.wolfandwings.ru:8080/admin
+# (panel.wolfandwings.ru — только локальная запись в /etc/hosts → 127.0.0.1)
+
+{
+	email admin@wolfandwings.ru
+}
+
+# --- Алиасы → 301 на основной домен ---
+# Все эти домены смотрят A-записями на тот же сервер; Caddy выпускает для каждого
+# свой LE-сертификат и делает постоянный редирект на wolfandwings.ru.
+# .рф-домены указаны в пуникоде — Caddy надёжно матчит их (кириллицу не подхватывает).
+spiceandwolf.ru,
+wolfanddice.com,
+wolfanddice.ru,
+xn--80aaejsbcahld9a9bzdn.xn--p1ai,
+xn--80adsbkcesx0dj8co6b.xn--p1ai,
+xn--80adsbaordfilon2cn8k.xn--p1ai,
+www.wolfandwings.ru {
+	redir https://wolfandwings.ru{uri} permanent
+}
+
+# --- Витрина (Next.js) ---
+# CSP не здесь, а в Next proxy.ts: nonce генерится на каждый запрос,
+# и Next сам вешает его на свои <script>. Caddy не умеет per-request nonce.
+wolfandwings.ru {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "geolocation=(),microphone=(),camera=()"
+		X-Frame-Options DENY
+		-Server
+	}
+	request_body {
+		max_size 5MB
+	}
+	reverse_proxy 127.0.0.1:3000
+}
+

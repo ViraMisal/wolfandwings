@@ -1,0 +1,48 @@
+{{define "body"}}
+<h1>{{if .IsNew}}Новый товар{{else}}Редактирование: {{.Product.Title}}{{end}}</h1>
+{{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+<form method="post" action="{{if .IsNew}}/admin/products{{else}}/admin/products/{{.Product.ID}}{{end}}" class="card">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <div class="grid2">
+    <div><label>Slug (URL)</label><input name="slug" required value="{{.Product.Slug}}" placeholder="lappland-lapplandia"></div>
+    <div><label>Название</label><input name="title" required value="{{.Product.Title}}" placeholder="Лаппланд в Лаппландии"></div>
+  </div>
+  <div class="grid2">
+    <div><label>Художник</label><select name="artist_id">{{range .Artists}}<option value="{{.ID}}" {{if eq .ID $.Product.Artist.ID}}selected{{end}}>{{.Name}}</option>{{end}}</select></div>
+    <div><label>Фандом</label><select name="fandom_id">{{range .Fandoms}}<option value="{{.ID}}" {{if eq .ID $.Product.Fandom.ID}}selected{{end}}>{{.Name}}</option>{{end}}</select></div>
+  </div>
+  <div class="grid2">
+    <div><label>Категория</label><select name="category_id">{{range .Categories}}<option value="{{.ID}}" {{if eq .ID $.Product.Category.ID}}selected{{end}}>{{.Name}}</option>{{end}}</select></div>
+    <div><label>Tint (цвет плейсхолдера)</label><select name="tint">{{range .Tints}}<option {{if eq $.Product.Tint .}}selected{{end}}>{{.}}</option>{{end}}</select></div>
+  </div>
+  <div class="grid2">
+    <div>
+      <label>Цена (в рублях)</label>
+      <input name="base_price" type="number" step="0.01" min="0" required value="{{kpk2rub .Product.BasePrice}}" style="font-family:ui-monospace,monospace">
+      <span class="hint">{{if .Product.BasePrice}}сейчас {{kpk2text .Product.BasePrice}}{{end}}</span>
+    </div>
+    <div>
+      <label>Старая цена (0 = нет скидки)</label>
+      <input name="old_price" type="number" step="0.01" min="0" value="{{kpk2rub .Product.OldPrice}}" style="font-family:ui-monospace,monospace">
+      <span class="hint">{{if .Product.OldPrice}}{{kpk2text .Product.OldPrice}}{{end}}</span>
+    </div>
+  </div>
+  <div class="grid2">
+    <div><label>Статус</label><select name="status">{{range .Statuses}}<option {{if eq $.Product.Status .}}selected{{end}}>{{statusLabel .}}</option>{{end}}</select></div>
+    <div><label>ETA (для предзаказа)</label><input name="eta" value="{{.Product.ETA}}" placeholder="до 20 июля"></div>
+  </div>
+  <label>Описание</label><textarea name="description" rows="3">{{.Product.Description}}</textarea>
+  <label>Варианты (размеры)</label>
+  <textarea name="variants" rows="3" placeholder="XL · 90×40 | 0&#10;XXL · 120×50 | 60000">{{variantsText .Product.Variants}}</textarea>
+  <span class="hint" style="margin-top:.2rem">Формат: Название | наценка в копейках (60000 = +600₽). 0 = базовая цена.</span>
+  <label>Фото товара (URL)</label>
+  <textarea name="images" rows="4" placeholder="https://.../photo.jpg | alt-текст | 1&#10;https://.../photo2.jpg | ещё ракурс | 0">{{imagesText .Product.Images}}</textarea>
+  <span class="hint">Одна строка = одно фото. 1 = главное (обложка), 0 = дополнительное. Сейчас: {{len .Product.Images}} фото.</span>
+  <label class="row" style="gap:.5rem;margin:1rem 0"><input type="checkbox" name="featured" value="1" {{if .Product.Featured}}checked{{end}} style="width:auto"> Рекомендуемый (на главную)</label>
+  <div class="row" style="margin-top:1rem">
+    <button class="btn" type="submit">Сохранить</button>
+    <a class="btn btn-ghost" href="/admin/products">Отмена</a>
+    {{if not .IsNew}}<button class="btn btn-acc" formaction="/admin/products/{{.Product.ID}}/delete" formmethod="post" onclick="return confirm('Удалить «{{.Product.Title}}»? Это нельзя отменить.')">Удалить</button>{{end}}
+  </div>
+</form>
+{{end}}

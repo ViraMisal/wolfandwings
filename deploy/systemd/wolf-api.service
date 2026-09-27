@@ -1,0 +1,45 @@
+[Unit]
+Description=Wolf and Wings — Go API
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wolf-api
+Group=wolf-api
+WorkingDirectory=/opt/wolfandwings/api
+EnvironmentFile=/etc/wolfandwings/api.env
+ExecStart=/opt/wolfandwings/api/wolf-api
+Restart=on-failure
+RestartSec=3
+
+# --- Hardening ---
+# Чистый Go-бинарник (CGO_ENABLED=0): проверено на живом бинарнике —
+# MDWE + seccomp @system-service + ProtectProc не мешают. Пустые
+# CapabilityBoundingSet=/AmbientCapabilities= не ставим: роняют modernc sqlite.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/wolfandwings/api/data
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

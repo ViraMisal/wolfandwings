@@ -1,0 +1,22 @@
+{{define "body"}}
+<div class="row" style="justify-content:space-between"><h1>Художники ({{len .Artists}})</h1><a class="btn" href="/admin/artists/new">+ Новый</a></div>
+<table>
+  <thead><tr><th>Имя</th><th>Slug</th><th>Работ</th><th></th></tr></thead>
+  <tbody>
+  {{range .Artists}}
+    <tr>
+      <td><b>{{.Name}}</b></td>
+      <td class="mono subtle">{{.Slug}}</td>
+      <td>{{.WorksCount}}</td>
+      <td>
+        <a class="btn btn-sm btn-ghost" href="/admin/artists/{{.ID}}/edit">ред.</a>
+        <form method="post" action="/admin/artists/{{.ID}}/delete" style="display:inline" onsubmit="return confirm('Удалить «{{.Name}}»?')">
+          <input type="hidden" name="csrf" value="{{$.CSRF}}">
+          <button class="btn btn-sm btn-acc" type="submit">удл.</button>
+        </form>
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{end}}

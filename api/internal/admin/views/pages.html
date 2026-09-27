@@ -1,0 +1,15 @@
+{{define "body"}}
+<div class="row" style="justify-content:space-between"><h1>Страницы</h1><a class="btn" href="/admin/pages/new">+ Новая</a></div>
+<table>
+  <thead><tr><th>Заголовок</th><th>Slug</th><th></th></tr></thead>
+  <tbody>
+  {{range .Pages}}
+    <tr>
+      <td>{{.Title}}</td>
+      <td class="mono subtle">{{.Slug}}</td>
+      <td><a href="/admin/pages/{{.ID}}/edit">ред.</a></td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{end}}

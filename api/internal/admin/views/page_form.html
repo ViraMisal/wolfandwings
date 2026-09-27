@@ -1,0 +1,15 @@
+{{define "body"}}
+<h1>{{if .IsNew}}Новая страница{{else}}Редактирование: {{.Page.Title}}{{end}}</h1>
+{{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+<form method="post" action="{{if .IsNew}}/admin/pages{{else}}/admin/pages/{{.Page.ID}}{{end}}" class="card">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <div class="grid2">
+    <div><label>Заголовок</label><input name="title" required value="{{.Page.Title}}"></div>
+    <div><label>Slug (URL)</label><input name="slug" required value="{{.Page.Slug}}" placeholder="oferta"></div>
+  </div>
+  <label>Meta description</label><input name="meta" value="{{.Page.MetaDescription}}">
+  <label>Содержание (Markdown)</label>
+  <textarea name="body" rows="20" placeholder="# Заголовок&#10;&#10;Текст...">{{.Page.Body}}</textarea>
+  <div class="row" style="margin-top:1rem"><button class="btn" type="submit">Сохранить</button><a class="btn btn-ghost" href="/admin/pages">Отмена</a></div>
+</form>
+{{end}}

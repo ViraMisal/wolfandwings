@@ -1,0 +1,18 @@
+{{define "body"}}
+<h1>{{if .IsNew}}Новый художник{{else}}Редактирование: {{.Artist.Name}}{{end}}</h1>
+{{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+<form method="post" action="{{if .IsNew}}/admin/artists{{else}}/admin/artists/{{.Artist.ID}}{{end}}" class="card">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <div class="grid2">
+    <div><label>Имя</label><input name="name" required value="{{.Artist.Name}}" placeholder="не.сая"></div>
+    <div><label>Slug (URL)</label><input name="slug" required value="{{.Artist.Slug}}" placeholder="ne-saya"></div>
+  </div>
+  <label>Био</label><textarea name="bio" rows="3" placeholder="Тушь и серебро. Лунные портреты...">{{.Artist.Bio}}</textarea>
+  <label>URL аватарки</label><input name="avatar_url" value="{{.Artist.AvatarURL}}" placeholder="https://...">
+  <div class="grid2">
+    <div><label>ВКонтакте</label><input name="vk" value="{{index .Artist.Socials "vk"}}" placeholder="vk.com/..."></div>
+    <div><label>Telegram</label><input name="tg" value="{{index .Artist.Socials "tg"}}" placeholder="@nickname"></div>
+  </div>
+  <div class="row" style="margin-top:1rem"><button class="btn" type="submit">Сохранить</button><a class="btn btn-ghost" href="/admin/artists">Отмена</a></div>
+</form>
+{{end}}

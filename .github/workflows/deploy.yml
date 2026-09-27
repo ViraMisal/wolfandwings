@@ -1,0 +1,112 @@
+name: deploy
+# WIP: сценарий проверится первым же запуском в репозитории.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  APP_DIR: /opt/wolfandwings
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---------- Go API ----------
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: api/go.sum
+      - name: Build API
+        working-directory: api
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o wolf-api ./cmd/api
+
+      # ---------- Next.js web (standalone) ----------
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      # кеш ДО сборки, чтобы сборка его реально использовала
+      - name: Cache Next build
+        uses: actions/cache@v4
+        with:
+          path: web/.next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}-${{ hashFiles('web/src/**') }}
+          restore-keys: next-${{ runner.os }}-
+      - name: Build web
+        working-directory: web
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+      - name: Stage standalone bundle
+        working-directory: web
+        run: |
+          mkdir -p pkg/.next
+          cp -r .next/standalone/. pkg/
+          cp -r .next/static pkg/.next/static
+          cp -r public/. pkg/public/
+
+      # ---------- Deploy over SSH ----------
+      # Secrets: SSH_PRIVATE_KEY, SERVER_HOST, SERVER_USER (deploy),
+      # SSH_KNOWN_HOSTS (вывод `ssh-keyscan -H SERVER_IP`) — пиннит хост-ключ, без TOFU.
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          if [ -n "${{ secrets.SSH_KNOWN_HOSTS }}" ]; then
+            printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          else
+            echo "::warning::SSH_KNOWN_HOSTS не задан — keyscan (TOFU)"
+            ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          fi
+      - name: Upload API binary
+        run: |
+          scp -q "api/wolf-api" "${{ secrets.SERVER_USER || 'deploy' }}@${{ secrets.SERVER_HOST }}:$APP_DIR/api/wolf-api.new"
+          # mv на месте = атомарная замена, работающий процесс не замечает
+          ssh "${{ secrets.SERVER_USER || 'deploy' }}@${{ secrets.SERVER_HOST }}" \
+            "mv $APP_DIR/api/wolf-api.new $APP_DIR/api/wolf-api && chmod +x $APP_DIR/api/wolf-api"
+      - name: Upload web release
+        run: |
+          REL="r-$(date -u +%Y%m%dT%H%M%SZ)"
+          echo "RELEASE=$REL" >> "$GITHUB_ENV"
+          # льём во временную папку, затем mv в releases/ — релиз появляется мгновенно и целиком
+          rsync -az --no-perms web/pkg/ "${{ secrets.SERVER_USER || 'deploy' }}@${{ secrets.SERVER_HOST }}:$APP_DIR/web/.staging-$REL/"
+          ssh "${{ secrets.SERVER_USER || 'deploy' }}@${{ secrets.SERVER_HOST }}" "
+            mv $APP_DIR/web/.staging-$REL $APP_DIR/web/releases/$REL
+            chmod -R g+rwX $APP_DIR/web/releases/$REL
+          "
+      - name: Switch current + restart + healthcheck
+        run: |
+          ssh "${{ secrets.SERVER_USER || 'deploy' }}@${{ secrets.SERVER_HOST }}" 'bash -s' -- "$RELEASE" <<'REMOTE'
+            set -euo pipefail
+            REL="$1"
+            APP_DIR=/opt/wolfandwings
+            # атомарное переключение symlink: tmp + rename(2)
+            ln -sfn "$APP_DIR/web/releases/$REL" "$APP_DIR/web/current.tmp"
+            mv -T "$APP_DIR/web/current.tmp" "$APP_DIR/web/current"
+            sudo systemctl restart wolf-api
+            sudo systemctl restart wolf-web
+            # хвостовые релизы и осиротевшие staging-каталоги не копим
+            (cd "$APP_DIR/web/releases" && ls -1dt ./r-* | tail -n +6 | xargs -r rm -rf)
+            (cd "$APP_DIR/web" && ls -1d ./.staging-* 2>/dev/null | xargs -r rm -rf)
+            # healthcheck с ретраями: web стартует не мгновенно
+            for i in $(seq 1 15); do curl -fsS http://127.0.0.1:8080/healthz >/dev/null && break; [ "$i" = 15 ] && echo "api не поднялся" && exit 1; sleep 1; done
+            for i in $(seq 1 15); do curl -fsS -o /dev/null http://127.0.0.1:3000/ && break; [ "$i" = 15 ] && echo "web не поднялся" && exit 1; sleep 1; done
+            echo "api: $(systemctl is-active wolf-api), web: $(systemctl is-active wolf-web), release: $REL"
+            echo "откат: ln -sfn $APP_DIR/web/releases/<прошлый> $APP_DIR/web/current.tmp && mv -T $APP_DIR/web/current.tmp $APP_DIR/web/current && sudo systemctl restart wolf-web"
+          REMOTE

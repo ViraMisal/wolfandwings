@@ -1,0 +1,9 @@
+overrides:
+  browserslist: ">=4.28.7"
+
+onlyBuiltDependencies:
+  - sharp
+  - unrs-resolver
+dangerouslyAllowAllBuilds: true
+minimumReleaseAgeExclude:
+  - lucide-react

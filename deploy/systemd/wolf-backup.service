@@ -1,0 +1,39 @@
+[Unit]
+Description=Wolf and Wings — ежедневный бекап Postgres (pg_dump custom)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=wolf-api
+Group=wolf-api
+# DATABASE_URL читается из api.env (systemd читает его как root и отдаёт процессу)
+EnvironmentFile=/etc/wolfandwings/api.env
+StateDirectory=wolf-backup
+# дампы содержат ПДн — никому кроме владельца
+UMask=0077
+# %% экранируется для systemd — bash получает $(date +%F); хранятся 14 дней
+ExecStart=/usr/bin/bash -c 'pg_dump --format=custom --file=/var/lib/wolf-backup/wolf-$(date +%%F).dump "$${DATABASE_URL}" && find /var/lib/wolf-backup -name "wolf-*.dump" -mtime +14 -delete'
+
+# --- Hardening ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/wolf-backup
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

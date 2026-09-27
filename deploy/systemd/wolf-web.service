@@ -1,0 +1,48 @@
+[Unit]
+Description=Wolf and Wings — Next.js storefront
+After=network-online.target wolf-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wolf-web
+Group=wolf-web
+WorkingDirectory=/opt/wolfandwings/web/current
+EnvironmentFile=/etc/wolfandwings/web.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/wolfandwings/web/current/server.js
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+Restart=on-failure
+RestartSec=3
+
+# --- Hardening ---
+# Node: без MemoryDenyWriteExecute/SystemCallFilter — V8 нужен W+X и свои сисколлы.
+# Сеть наружу не нужна (API на loopback, DNS не используется) — режем egress.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+# целиком web: current/.next/cache создаётся в рантайме, в свежем релизе его ещё нет
+ReadWritePaths=/opt/wolfandwings/web
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
+IPAddressAllow=localhost
+IPAddressDeny=any
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

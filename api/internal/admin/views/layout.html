@@ -1,0 +1,48 @@
+{{define "layout"}}<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>{{.Title}} — Админка · Волчица и Крылья</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='38' fill='%238fb6ff'/%3E%3Ccircle cx='64' cy='42' r='30' fill='%230c111e'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#0c111e;--bg2:#121829;--bg3:#1a2138;--line:#232c45;--fg:#eaeffb;--mut:#a4b0ce;--sub:#6e7a9c;--luna:#8fb6ff;--acc:#ff4d60;--ok:#46d6a8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 system-ui,Inter,sans-serif}
+a{color:var(--luna);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1000px;margin:0 auto;padding:1.5rem}
+.nav{display:flex;gap:1rem;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--line);background:var(--bg2)}
+.nav .brand{font-weight:700;margin-right:auto}
+.nav a{color:var(--mut)}.nav a.on{color:var(--fg)}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{text-align:left;padding:.6rem .5rem;border-bottom:1px solid var(--line);font-size:.9rem}
+th{color:var(--sub);font-weight:600;text-transform:uppercase;font-size:.72rem;letter-spacing:.06em}
+.badge{padding:.2rem .5rem;border-radius:99px;font-size:.72rem;border:1px solid var(--line);background:var(--bg3);color:var(--mut)}
+.b-ok{color:var(--ok);border-color:#2c5b4a}.b-pre{color:var(--luna);border-color:#2a3f6b}.b-arc{color:var(--sub)}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:1.2rem;margin:1rem 0}
+label{display:block;font-size:.82rem;color:var(--mut);margin:.6rem 0 .2rem}
+input,select,textarea{width:100%;background:#0a0e18;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:.55rem .7rem;font:inherit}
+input:focus{outline:none;border-color:var(--luna)}
+.btn{display:inline-flex;align-items:center;gap:.4rem;background:var(--luna);color:#0a0e18;border:none;border-radius:8px;padding:.6rem 1rem;font-weight:600;cursor:pointer;text-decoration:none}
+.btn:hover{text-decoration:none;filter:brightness(1.1)}
+.btn-sm{padding:.3rem .6rem;font-size:.8rem}
+.btn-acc{background:var(--acc);color:#fff}
+.btn-ghost{background:transparent;color:var(--mut);border:1px solid var(--line)}
+.hint{display:block;font-size:.74rem;color:var(--sub);margin-top:.2rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.mono{font-family:ui-monospace,monospace}.mut{color:var(--mut)}.sub{color:var(--sub)}
+.alert{background:rgba(255,77,96,.12);border:1px solid var(--acc);color:#ffb3bb;padding:.7rem 1rem;border-radius:8px;margin:1rem 0}
+.ok{background:rgba(70,214,168,.1);border:1px solid var(--ok);color:var(--ok);padding:.7rem 1rem;border-radius:8px;margin:1rem 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:1.2rem}
+.stat b{display:block;font-size:2rem;font-family:ui-monospace,monospace}
+.stat span{color:var(--sub);font-size:.82rem}
+h1{font-size:1.4rem;margin:1.5rem 0 .5rem}h2{font-size:1.1rem;margin:1.2rem 0 .4rem}
+code{background:var(--bg3);padding:.1rem .3rem;border-radius:4px}
+</style></head>
+<body>
+<nav class="nav">
+  <span class="brand">🐺🪽 Админка</span>
+  {{if .User}}<a href="/admin" class="on">Дашборд</a><a href="/admin/products">Товары</a><a href="/admin/artists">Художники</a><a href="/admin/pages">Страницы</a><a href="/admin/preorders">Заявки</a><a href="/admin/logout">Выйти</a>{{end}}
+</nav>
+<div class="wrap">{{template "body" .}}</div>
+</body></html>{{end}}

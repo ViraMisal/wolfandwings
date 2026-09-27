@@ -1,0 +1,24 @@
+{{define "body"}}
+<div class="row" style="justify-content:space-between"><h1>Товары ({{len .Products}})</h1><a class="btn" href="/admin/products/new">+ Новый</a></div>
+<table>
+  <thead><tr><th>Картинка</th><th>Название</th><th>Художник</th><th>Цена</th><th>Статус</th><th></th></tr></thead>
+  <tbody>
+  {{range .Products}}
+    <tr>
+      <td><span class="badge mono">{{len .Images}} фото</span></td>
+      <td><b>{{.Title}}</b><br><span class="mono subtle" style="font-size:.72rem">{{.Slug}}</span></td>
+      <td>{{.Artist.Name}}</td>
+      <td class="mono">{{kpk2text .BasePrice}}</td>
+      <td><span class="badge {{statusCls .Status}}">{{statusLabel .Status}}</span></td>
+      <td>
+        <a class="btn btn-sm btn-ghost" href="/admin/products/{{.ID}}/edit">ред.</a>
+        <form method="post" action="/admin/products/{{.ID}}/delete" style="display:inline" onsubmit="return confirm('Удалить «{{.Title}}» навсегда?')">
+          <input type="hidden" name="csrf" value="{{$.CSRF}}">
+          <button class="btn btn-sm btn-acc" type="submit">удл.</button>
+        </form>
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{end}}
